@@ -49,7 +49,7 @@ class AuthorController extends AbstractController
     }
 
     #[Route('/api/authors/{id}', name: 'deleteAuthor', methods: ['DELETE'])]
-    #[IsGranted("ROLE_ADMIN", message: "Vous devez être administrateur pour supprimer un auteur")]
+    // #[IsGranted("ROLE_ADMIN", message: "Vous devez être administrateur pour supprimer un auteur")]
     public function deleteBook(Author $author, EntityManagerInterface $em, TagAwareCacheInterface $cachePool): JsonResponse
     {
         $cachePool->invalidateTags(["authorCache"]);
@@ -59,7 +59,7 @@ class AuthorController extends AbstractController
     }
 
     #[Route('/api/authors', name: 'createAuthor', methods: ['POST'])]
-    #[IsGranted("ROLE_ADMIN", message: "Vous devez être administrateur pour créer un auteur")]
+    // #[IsGranted("ROLE_ADMIN", message: "Vous devez être administrateur pour créer un auteur")]
     public function createAuthor(Request $request, SerializerInterface $serializer, EntityManagerInterface $em, UrlGeneratorInterface $urlGenerator, ValidatorInterface $validator): JsonResponse
     {
         $context = SerializationContext::create()->setGroups(['getAuthors']);
@@ -82,7 +82,7 @@ class AuthorController extends AbstractController
     }
 
     #[Route('/api/authors/{id}', name: 'updateAuthor', methods: ['PUT'])]
-    #[IsGranted("ROLE_ADMIN", message: "Vous devez être administrateur pour modifier un auteur")]
+    // #[IsGranted("ROLE_ADMIN", message: "Vous devez être administrateur pour modifier un auteur")]
     public function updateAuthor(Author $currentAuthor, Request $request, SerializerInterface $serializer, EntityManagerInterface $em, ValidatorInterface $validator, TagAwareCacheInterface $cache): JsonResponse
     {
         $newAuthor = $serializer->deserialize($request->getContent(), Author::class, 'json');
