@@ -109,14 +109,16 @@ class BookController extends AbstractController
             return new JsonResponse($serializer->serialize($errors, 'json'), JsonResponse::HTTP_BAD_REQUEST, [], true);
         }
 
-        $em->persist($book);
-        $em->flush();
 
         $content = $request->toArray();
         $idAuthor = $content['idAuthor'] ?? -1;
 
         $book->setAuthor($authorRepository->find($idAuthor));
         $jsonBook = $serializer->serialize($book, 'json', $context);
+
+        $em->persist($book);
+        $em->flush();
+
         $location = $urlGenerator->generate('detailBook', ['id' => $book->getId()], UrlGeneratorInterface::ABSOLUTE_URL);
         return new JsonResponse($jsonBook, Response::HTTP_CREATED, ['Location' => $location], true);
     }
