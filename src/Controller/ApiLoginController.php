@@ -31,7 +31,7 @@ class ApiLoginController extends AbstractController
         $token = $this->jwtManager->create($user);
 
         return $this->json([
-            'user' => $user->getUserIdentifier(),
+            'role' => $user->getRoles(),
             'token' => $token,
         ]);
     }
