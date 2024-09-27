@@ -29,13 +29,19 @@ class AuthorController extends AbstractController
 
         $idCache = "getAllAuthors-" . $page . "-" . $limit;
 
-        $jsonAuthorList = $cache->get($idCache, function (ItemInterface $item) use ($authorRepository, $page, $limit, $serializer) {
+        if ($page) {
+            $jsonAuthorList = $cache->get($idCache, function (ItemInterface $item) use ($authorRepository, $page, $limit, $serializer) {
+                $context = SerializationContext::create()->setGroups(['getAuthors']);
+                $item->tag("authorCache")
+                    ->expiresAfter(180);
+                $authorList = $authorRepository->findAllWithPagination($page, $limit);
+                return $serializer->serialize($authorList, 'json', $context);
+            });
+        } else {
             $context = SerializationContext::create()->setGroups(['getAuthors']);
-            $item->tag("authorCache")
-                ->expiresAfter(180);
-            $authorList = $authorRepository->findAllWithPagination($page, $limit);
-            return $serializer->serialize($authorList, 'json', $context);
-        });
+            $jsonAuthorList = $serializer->serialize($authorRepository, 'json', $context);
+        }
+
 
         return new JsonResponse($jsonAuthorList, Response::HTTP_OK, [], true);
     }
