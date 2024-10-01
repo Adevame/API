@@ -16,6 +16,13 @@ class BookRepository extends ServiceEntityRepository
         parent::__construct($registry, Book::class);
     }
 
+    public function findAllBooks()
+    {
+        return $this->createQueryBuilder('b')
+            ->getQuery()
+            ->getResult();
+    }
+
     public function findAllWithPagination($page, $limit)
     {
         $qb = $this->createQueryBuilder('b')

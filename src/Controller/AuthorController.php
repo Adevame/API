@@ -24,24 +24,16 @@ class AuthorController extends AbstractController
     #[Route('/api/authors', name: 'authors', methods: ['GET'])]
     public function getAllAuthors(AuthorRepository $authorRepository, SerializerInterface $serializer, TagAwareCacheInterface $cache, Request $request): JsonResponse
     {
-        $page = $request->get('page', 1);
-        $limit = $request->get('limit', 3);
+        $idCache = "getAllAuthors";
 
-        $idCache = "getAllAuthors-" . $page . "-" . $limit;
 
-        if ($page) {
-            $jsonAuthorList = $cache->get($idCache, function (ItemInterface $item) use ($authorRepository, $page, $limit, $serializer) {
-                $context = SerializationContext::create()->setGroups(['getAuthors']);
-                $item->tag("authorCache")
-                    ->expiresAfter(180);
-                $authorList = $authorRepository->findAllWithPagination($page, $limit);
-                return $serializer->serialize($authorList, 'json', $context);
-            });
-        } else {
+        $jsonAuthorList = $cache->get($idCache, function (ItemInterface $item) use ($authorRepository, $serializer) {
             $context = SerializationContext::create()->setGroups(['getAuthors']);
-            $jsonAuthorList = $serializer->serialize($authorRepository, 'json', $context);
-        }
-
+            $item->tag("authorCache")
+                ->expiresAfter(180);
+            $authorList = $authorRepository->findAllAuthors();
+            return $serializer->serialize($authorList, 'json', $context);
+        });
 
         return new JsonResponse($jsonAuthorList, Response::HTTP_OK, [], true);
     }

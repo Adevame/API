@@ -59,16 +59,14 @@ class BookController extends AbstractController
     #[Route('/api/books', name: 'books', methods: ['GET'])]
     public function getAllBooks(BookRepository $bookRepository, SerializerInterface $serializer, Request $request, TagAwareCacheInterface $cache): JsonResponse
     {
-        $page = $request->get('page', 1);
-        $limit = $request->get('limit', 3);
 
-        $idCache = "getAllBooks-" . $page . "-" . $limit;
+        $idCache = "getAllBooks";
 
-        $jsonBookList = $cache->get($idCache, function (ItemInterface $item) use ($bookRepository, $page, $limit, $serializer) {
+        $jsonBookList = $cache->get($idCache, function (ItemInterface $item) use ($bookRepository, $serializer) {
             $context = SerializationContext::create()->setGroups(['getBooks']);
             $item->tag("bookCache")
                 ->expiresAfter(180);
-            $bookList = $bookRepository->findAllWithPagination($page, $limit);
+            $bookList = $bookRepository->findAllBooks();
             return $serializer->serialize($bookList, 'json', $context);
         });
 
@@ -125,9 +123,17 @@ class BookController extends AbstractController
 
     #[Route('/api/books/{id}', name: 'updateBook', methods: ['PUT'])]
     #[IsGranted("ROLE_ADMIN", message: "Vous devez être administrateur pour modifier un livre")]
-    public function updateBook(Book $currentBook, Request $request, SerializerInterface $serializer, EntityManagerInterface $em, AuthorRepository $authorRepository, ValidatorInterface $validator, TagAwareCacheInterface $cache): JsonResponse
-    {
+    public function updateBook(
+        Book $currentBook,
+        Request $request,
+        SerializerInterface $serializer,
+        EntityManagerInterface $em,
+        AuthorRepository $authorRepository,
+        ValidatorInterface $validator,
+        TagAwareCacheInterface $cache
+    ): JsonResponse {
         $newBook = $serializer->deserialize($request->getContent(), Book::class, 'json');
+
         $currentBook->setTitle($newBook->getTitle());
         $currentBook->setCoverText($newBook->getCoverText());
 
@@ -137,15 +143,22 @@ class BookController extends AbstractController
         }
 
         $content = $request->toArray();
-        $idAuthor = $content['idAuthor'] ?? -1;
+        $idAuthor = $content['author']['id'] ?? null;
 
-        $currentBook->setAuthor($authorRepository->find($idAuthor));
+        if ($idAuthor !== null) {
+            $author = $authorRepository->find($idAuthor);
+            if (!$author) {
+                return new JsonResponse(['error' => 'Auteur non trouvé'], JsonResponse::HTTP_NOT_FOUND);
+            }
+            $currentBook->setAuthor($author);
+        }
 
         $em->persist($currentBook);
         $em->flush();
 
+        $updatedBookJson = $serializer->serialize($currentBook, 'json');
         $cache->invalidateTags(["bookCache"]);
 
-        return new JsonResponse(null, JsonResponse::HTTP_NO_CONTENT);
+        return new JsonResponse($updatedBookJson, JsonResponse::HTTP_OK, [], true);
     }
 }
